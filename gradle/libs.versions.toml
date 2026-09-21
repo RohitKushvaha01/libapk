@@ -1,0 +1,26 @@
+[versions]
+kotlin = "2.4.10"
+coroutines = "1.11.0"
+# Apache-2.0, zero-dependency, Android-capable binary resource table + AXML library.
+arsclib = "1.4.0"
+# Google's official APK signing library. Also performs 4-byte / 16384-byte page alignment.
+apksig = "9.4.0"
+# Shaded fat jar; requires a Java 11+ runtime. Used for D8/R8 dexing.
+r8 = "9.4.24"
+# Eclipse Java Compiler (JVM-hosted; optional module).
+ecj = "3.46.100"
+junit = "5.10.1"
+junitPlatform = "1.10.1"
+
+[libraries]
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+arsclib = { module = "io.github.reandroid:ARSCLib", version.ref = "arsclib" }
+apksig = { module = "com.android.tools.build:apksig", version.ref = "apksig" }
+r8 = { module = "com.android.tools:r8", version.ref = "r8" }
+ecj = { module = "org.eclipse.jdt:ecj", version.ref = "ecj" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitPlatform" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

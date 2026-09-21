@@ -1,0 +1,53 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Assemble library jars (JDK ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['21']
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # No Android SDK is installed here on purpose: assembling libapk must not need one.
+      - name: Assemble
+        run: ./gradlew assemble --console=plain
+
+      - name: Report resolved toolchain
+        run: |
+          java -version
+          ./gradlew --version --console=plain
+
+      - name: Upload jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: libapk-jars
+          path: libapk-*/build/libs/*.jar
+          if-no-files-found: error

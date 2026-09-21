@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <option name="testRunner" value="CHOOSE_PER_TEST" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="gradleJvm" value="#GRADLE_LOCAL_JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/libapk-all" />
+            <option value="$PROJECT_DIR$/libapk-core" />
+            <option value="$PROJECT_DIR$/libapk-ecj" />
+            <option value="$PROJECT_DIR$/libapk-r8" />
+            <option value="$PROJECT_DIR$/libapk-resources" />
+            <option value="$PROJECT_DIR$/libapk-signing" />
+            <option value="$PROJECT_DIR$/libapk-testkit" />
+            <option value="$PROJECT_DIR$/sample" />
+          </set>
+        </option>
+        <option name="myGradleHome" value="$USER_HOME$/.gradle/wrapper/dists/gradle-8.12-bin/cetblhg4pflnnks72fxwobvgv/gradle-8.12" />
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>

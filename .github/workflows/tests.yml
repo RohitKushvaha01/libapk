@@ -1,0 +1,89 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run test suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # The test suite validates its output with aapt2, apksigner, zipalign and dexdump, and
+      # compiles Java against android.jar. libapk itself never needs any of these.
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-36 build-tools;36.0.0'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Fail early and precisely if the SDK image is incomplete, rather than letting the
+      # SDK-backed tests quietly skip themselves.
+      - name: Verify Android toolchain
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/build-tools"
+          ls "$ANDROID_HOME/platforms"
+          status=0
+          for tool in aapt2 apksigner zipalign dexdump; do
+            if ! compgen -G "$ANDROID_HOME/build-tools/*/$tool" > /dev/null; then
+              echo "::error::$tool not found under $ANDROID_HOME/build-tools"
+              status=1
+            fi
+          done
+          if [ ! -f "$ANDROID_HOME/platforms/android-36/android.jar" ]; then
+            echo "::error::platforms/android-36/android.jar is missing"
+            status=1
+          fi
+          exit $status
+
+      - name: Run tests
+        run: ./gradlew test --console=plain
+
+      # Guards against a green run that silently verified nothing: the SDK-backed integration tests
+      # skip themselves when no SDK is found, which would otherwise hide a broken CI image.
+      - name: Fail if integration tests were skipped
+        run: |
+          shopt -s nullglob
+          files=(libapk-*/build/test-results/test/*.xml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::no test results were produced"
+            exit 1
+          fi
+          skipped=$(awk -F'skipped="' '/<testsuite /{split($2,a,"\""); s+=a[1]} END{print s+0}' "${files[@]}")
+          echo "skipped tests: $skipped"
+          if [ "$skipped" -gt 0 ]; then
+            echo "::error::$skipped test(s) were skipped; the Android SDK is probably incomplete"
+            exit 1
+          fi
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            libapk-*/build/reports/tests/**
+            libapk-*/build/test-results/**
+          if-no-files-found: ignore
