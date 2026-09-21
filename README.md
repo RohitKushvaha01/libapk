@@ -2,11 +2,12 @@
 
 [![Build](https://github.com/RohitKushvaha01/libapk/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/RohitKushvaha01/libapk/actions/workflows/build.yml)
 [![Tests](https://github.com/RohitKushvaha01/libapk/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/RohitKushvaha01/libapk/actions/workflows/tests.yml)
+[![Release](https://jitpack.io/v/RohitKushvaha01/libapk.svg)](https://jitpack.io/#RohitKushvaha01/libapk)
 
 Build Android APK files **programmatically from Kotlin/JVM**, with **no `aapt2`, no Android SDK,
 and no Gradle** involved in producing the APK.
 
-libapk exists for tools that must emit an installable APK themselves, Everything an APK needs is
+libapk exists for tools that must emit an installable APK themselves. Everything an APK needs is
 synthesized in-process:
 
 | APK part | How libapk produces it |
@@ -19,6 +20,58 @@ synthesized in-process:
 | `assets/**` | copied from a directory tree |
 | ZIP container | own deterministic writer with `zipalign`-equivalent alignment |
 | signature | apksig: v1 + v2 + v3, which also re-aligns the archive |
+
+## Installation
+
+Published through [JitPack](https://jitpack.io/#RohitKushvaha01/libapk). Add the repository:
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        google()                    // required: apksig and r8 come from Google Maven
+        maven("https://jitpack.io")
+    }
+}
+```
+
+then one dependency:
+
+```kotlin
+dependencies {
+    implementation("com.github.RohitKushvaha01.libapk:libapk-all:v0.1.0")
+}
+```
+
+`<version>` is the git tag verbatim. Swap `libapk-all` for individual modules to keep the
+dependency surface small:
+
+| Module | Use it when |
+|---|---|
+| `libapk-core` | you have pre-built classes or dex and only need zip assembly and the SPIs |
+| `libapk-resources` | you need the binary manifest (AXML) and `resources.arsc` |
+| `libapk-signing` | you need v1/v2/v3 signing and alignment |
+| `libapk-r8` | you need D8/R8 dexing |
+| `libapk-ecj` | you need Java compilation with ECJ or `javax.tools` |
+| `libapk-all` | you want everything |
+
+Depending on `libapk-core` alone needs neither `google()` nor the weight of R8 and ECJ.
+
+### Why `google()` is required
+
+`libapk-signing` depends on `com.android.tools.build:apksig` and `libapk-r8` depends on
+`com.android.tools:r8`. Both live on Google Maven only (`r8` is not on Maven Central at all, and
+Central's `apksig` stops at 2.3.0 from 2017). They are runtime-scoped dependencies, so code that
+merely *compiles* against libapk resolves without `google()`, but the moment Gradle resolves the
+runtime classpath you get:
+
+```
+com.android.tools.build:apksig:9.4.0 FAILED
+com.android.tools:r8:9.4.24 FAILED
+```
+
+Android projects declare `google()` already; plain JVM projects need to add it explicitly.
 
 ## Verified behaviour
 
@@ -516,6 +569,15 @@ CI runs on every commit:
   `tools/generate-android-attribute-ids/generate.sh`. Unknown attributes can always be set
   explicitly via `XmlAttribute(..., resourceId = …)`.
 * Research notes and verified Maven coordinates live in `docs/research/`.
+* Releases are JitPack-driven. Push a tag (`git tag v0.1.0 && git push origin v0.1.0`); the
+  `Release` workflow creates a GitHub Release and JitPack builds
+  `com.github.RohitKushvaha01.libapk:<module>:<tag>` on demand. `jitpack.yml` pins JDK 21 (Gradle 9
+  will not run on JitPack's Java 8 default) and skips the SDK-dependent tests, which already run in
+  GitHub Actions. The published version comes from JitPack's `VERSION` environment variable, falling
+  back to `0.1.0-SNAPSHOT` for local builds.
+* The Maven group is the JitPack-native `com.github.RohitKushvaha01.libapk`, which is what JitPack's
+  virtual repository serves for a multi-module build. Moving to Maven Central later means switching
+  the group to `io.github.rohitkushvaha01` and adding GPG signing plus a javadoc jar.
 
 ## Limitations
 

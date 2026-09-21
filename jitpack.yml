@@ -1,0 +1,12 @@
+# How JitPack builds this repository.
+#
+# Gradle 9 needs a JDK 17+ runtime, and the build pins `jvmToolchain(21)`, so the default
+# (Java 8) is not usable.
+jdk:
+  - openjdk21
+
+# JitPack's default is `./gradlew build publishToMavenLocal`. Tests validate their output with
+# aapt2, apksigner, zipalign and dexdump, and compile Java against android.jar, none of which
+# exist on JitPack. They run in GitHub Actions on every commit instead.
+install:
+  - ./gradlew publishToMavenLocal -x test --console=plain
